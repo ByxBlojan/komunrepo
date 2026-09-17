@@ -1,32 +1,43 @@
 import { useCallback, useMemo, useState } from "react";
 import { AVDELNINGAR, FORFRAGNINGAR, INVENTARIER } from "@/data/mockdata";
 import { ANVANDARE, type Anvandare } from "@/data/anvandare";
-import type { Forfragan, Inventarie, Kategori, Skick } from "@/data/typer";
+import type { Forfragan, Inventarie, Skick } from "@/data/typer";
 import { idagIso } from "@/lib/utils";
 
-const KATEGORI_PREFIX: Record<Kategori, string> = {
-  Skrivbord: "SKR",
-  Kontorsstol: "STL",
-  Förvaring: "FRV",
-  Bord: "BRD",
-  Sittmöbel: "SIT",
-  Belysning: "BEL",
-  Skärm: "SKM",
+const UNDERKATEGORI_PREFIX: Record<string, string> = {
+  skrivbord: "SKR",
+  kontorsstolar: "STL",
+  bord: "BRD",
+  forvaring: "FRV",
+  sittmobler: "SIT",
+  bollar: "BOL",
+  traningsredskap: "TRR",
+  idrottsmaterial: "IDM",
+  skarmar: "SKM",
+  datorer: "DAT",
+  projektorer: "PRJ",
+  vitvaror: "VIT",
+  servering: "SRV",
+  leksaker: "LEK",
+  forskolemobler: "FSM",
+  golvlampor: "BEL",
+  arbetsbelysning: "BEL",
 };
 
 export interface NyttInventarie {
   namn: string;
-  kategori: Kategori;
+  underkategoriId: string;
   beskrivning: string;
   skick: Skick;
   matt: string;
+  antal: number;
   inkopsar: number;
   uppskattatVarde: number;
   rum: string;
 }
 
-function nastaId(kategori: Kategori, befintliga: Inventarie[]): string {
-  const prefix = KATEGORI_PREFIX[kategori];
+function nastaId(underkategoriId: string, befintliga: Inventarie[]): string {
+  const prefix = UNDERKATEGORI_PREFIX[underkategoriId] ?? "OVR";
   const nummer = befintliga
     .filter((i) => i.id.startsWith(`KOM-${prefix}-`))
     .map((i) => Number(i.id.split("-")[2]))
@@ -72,17 +83,18 @@ export function useKommunCirkular() {
 
   const registreraInventarie = useCallback(
     (data: NyttInventarie): string => {
-      const id = nastaId(data.kategori, inventarier);
+      const id = nastaId(data.underkategoriId, inventarier);
       const avdelning = AVDELNINGAR.find((a) => a.id === aktivAvdelningId)!;
       const datum = idagIso();
 
       const nytt: Inventarie = {
         id,
         namn: data.namn,
-        kategori: data.kategori,
+        underkategoriId: data.underkategoriId,
         beskrivning: data.beskrivning,
         skick: data.skick,
         matt: data.matt,
+        antal: data.antal,
         inkopsar: data.inkopsar,
         uppskattatVarde: data.uppskattatVarde,
         placering: { avdelningId: avdelning.id, adress: avdelning.adress, rum: data.rum },

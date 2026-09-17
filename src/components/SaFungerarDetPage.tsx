@@ -20,7 +20,7 @@ const STEG: Steg[] = [
     nummer: 1,
     rubrik: "Överflödigt skrivbord",
     text: "Avdelning A behöver inte längre skrivbordet.",
-    bild: <KategoriBild kategori="Skrivbord" className="h-full w-full" />,
+    bild: <KategoriBild underkategoriId="skrivbord" className="h-full w-full" />,
   },
   {
     nummer: 2,
@@ -131,7 +131,7 @@ function IkonRuta({ ikon, etiketter }: { ikon: React.ReactNode; etiketter: strin
 function QrRuta() {
   return (
     <div className="flex h-full w-full items-center justify-center gap-4 px-4">
-      <KategoriBild kategori="Skrivbord" className="h-[92px] w-[110px] rounded" />
+      <KategoriBild underkategoriId="skrivbord" className="h-[92px] w-[110px] rounded" />
       <div className="flex flex-col items-center gap-1 rounded-md border border-[var(--border)] bg-white p-2">
         <QRCodeSVG value="KOM-SKR-0001" size={60} level="L" />
         <span className="font-mono text-[9px] text-slate-500">KOM-SKR-0001</span>

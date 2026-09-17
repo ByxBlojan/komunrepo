@@ -3,7 +3,14 @@ import { QRCodeSVG } from "qrcode.react";
 import { Falt, Inmatning, Knapp, Kort, KortHuvud, Textyta, Vallista } from "@/components/ui/primitiver";
 import { Sidrubrik, SuccessBanner, useSuccessBanner } from "@/components/Delat";
 import { KategoriBild } from "@/data/bilder";
-import { KATEGORIER, SKICK_VARDEN, type Kategori, type Skick } from "@/data/typer";
+import {
+  HUVUDKATEGORIER,
+  SKICK_VARDEN,
+  hittaUnderkategori,
+  underkategoriernaFor,
+  type Huvudkategori,
+  type Skick,
+} from "@/data/typer";
 import type { KommunCirkularState } from "@/lib/state";
 
 interface Props {
@@ -13,10 +20,12 @@ interface Props {
 
 const TOMT = {
   namn: "",
-  kategori: "Skrivbord" as Kategori,
+  huvudkategori: "Möbler" as Huvudkategori,
+  underkategoriId: "skrivbord",
   beskrivning: "",
   skick: "Bra" as Skick,
   matt: "",
+  antal: "1",
   inkopsar: "",
   varde: "",
   rum: "",
@@ -32,6 +41,11 @@ export function RegistreraPage({ state, onOppnaObjekt }: Props) {
     setFalt((prev) => ({ ...prev, [nyckel]: varde }));
   };
 
+  const bytHuvudkategori = (huvud: Huvudkategori) => {
+    const forsta = underkategoriernaFor(huvud)[0];
+    setFalt((prev) => ({ ...prev, huvudkategori: huvud, underkategoriId: forsta.id }));
+  };
+
   const spara = () => {
     if (!falt.namn.trim()) {
       setFel("Ange vad inventariet heter.");
@@ -45,10 +59,11 @@ export function RegistreraPage({ state, onOppnaObjekt }: Props) {
     setFel(null);
     const id = state.registreraInventarie({
       namn: falt.namn.trim(),
-      kategori: falt.kategori,
+      underkategoriId: falt.underkategoriId,
       beskrivning: falt.beskrivning.trim() || "Ingen beskrivning angiven.",
       skick: falt.skick,
       matt: falt.matt.trim() || "Mått ej angivna",
+      antal: Math.max(1, Number(falt.antal) || 1),
       inkopsar: Number(falt.inkopsar) || new Date().getFullYear(),
       uppskattatVarde: Number(falt.varde) || 0,
       rum: falt.rum.trim(),
@@ -56,7 +71,7 @@ export function RegistreraPage({ state, onOppnaObjekt }: Props) {
 
     setSenasteId(id);
     setFalt(TOMT);
-    banner.visa(`Inventariet registrerades som ${id} och publicerades för internt övertagande.`);
+    banner.visa(`Inventariet registrerades som ${id} och publicerades på handelsplatsen.`);
   };
 
   return (
@@ -83,25 +98,29 @@ export function RegistreraPage({ state, onOppnaObjekt }: Props) {
               </Falt>
             </div>
 
-            <Falt etikett="Kategori" htmlFor="kategori">
+            <Falt etikett="Kategori" htmlFor="huvudkategori">
               <Vallista
-                id="kategori"
-                value={falt.kategori}
-                onChange={(e) => andra("kategori", e.target.value)}
+                id="huvudkategori"
+                value={falt.huvudkategori}
+                onChange={(e) => bytHuvudkategori(e.target.value as Huvudkategori)}
               >
-                {KATEGORIER.map((k) => (
-                  <option key={k} value={k}>
-                    {k}
+                {HUVUDKATEGORIER.map((h) => (
+                  <option key={h} value={h}>
+                    {h}
                   </option>
                 ))}
               </Vallista>
             </Falt>
 
-            <Falt etikett="Skick" htmlFor="skick">
-              <Vallista id="skick" value={falt.skick} onChange={(e) => andra("skick", e.target.value)}>
-                {SKICK_VARDEN.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
+            <Falt etikett="Underkategori" htmlFor="underkategori">
+              <Vallista
+                id="underkategori"
+                value={falt.underkategoriId}
+                onChange={(e) => andra("underkategoriId", e.target.value)}
+              >
+                {underkategoriernaFor(falt.huvudkategori).map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.namn}
                   </option>
                 ))}
               </Vallista>
@@ -122,6 +141,26 @@ export function RegistreraPage({ state, onOppnaObjekt }: Props) {
                 />
               </Falt>
             </div>
+
+            <Falt etikett="Skick" htmlFor="skick">
+              <Vallista id="skick" value={falt.skick} onChange={(e) => andra("skick", e.target.value)}>
+                {SKICK_VARDEN.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </Vallista>
+            </Falt>
+
+            <Falt etikett="Antal" htmlFor="antal">
+              <Inmatning
+                id="antal"
+                type="number"
+                min={1}
+                value={falt.antal}
+                onChange={(e) => andra("antal", e.target.value)}
+              />
+            </Falt>
 
             <Falt etikett="Mått" htmlFor="matt">
               <Inmatning
@@ -151,7 +190,7 @@ export function RegistreraPage({ state, onOppnaObjekt }: Props) {
               />
             </Falt>
 
-            <Falt etikett="Uppskattat värde (kr)" htmlFor="varde">
+            <Falt etikett="Uppskattat värde per styck (kr)" htmlFor="varde">
               <Inmatning
                 id="varde"
                 type="number"
@@ -171,9 +210,7 @@ export function RegistreraPage({ state, onOppnaObjekt }: Props) {
 
             <div className="flex items-center gap-2 sm:col-span-2">
               <Knapp onClick={spara}>Registrera och publicera</Knapp>
-              <span className="text-xs text-slate-500">
-                Registreras av {state.aktivAvdelning.namn}
-              </span>
+              <span className="text-xs text-slate-500">Registreras av {state.aktivAvdelning.namn}</span>
             </div>
           </div>
         </Kort>
@@ -181,13 +218,13 @@ export function RegistreraPage({ state, onOppnaObjekt }: Props) {
         <div className="flex flex-col gap-5">
           <Kort>
             <KortHuvud>Förhandsvisning</KortHuvud>
-            <KategoriBild kategori={falt.kategori} className="h-40 w-full" />
+            <KategoriBild underkategoriId={falt.underkategoriId} className="h-40 w-full" />
             <div className="px-5 py-4">
               <p className="text-sm font-semibold text-slate-900">
                 {falt.namn.trim() || "Namnlöst inventarie"}
               </p>
               <p className="mt-1 text-xs text-slate-600">
-                {falt.kategori} · {falt.skick}
+                {hittaUnderkategori(falt.underkategoriId)?.namn} · {falt.skick}
               </p>
             </div>
           </Kort>

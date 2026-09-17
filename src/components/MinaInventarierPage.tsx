@@ -1,5 +1,6 @@
 import { Knapp, Kort, TomtLage } from "@/components/ui/primitiver";
 import { Sidrubrik, StatusMarke } from "@/components/Delat";
+import { hittaUnderkategori } from "@/data/typer";
 import type { KommunCirkularState } from "@/lib/state";
 import { formatKronor } from "@/lib/utils";
 
@@ -66,7 +67,9 @@ export function MinaInventarierPage({ state, onOppnaObjekt, onRegistrera }: Prop
                     >
                       <td className="px-4 py-3 text-[13px] font-medium text-slate-800">{objekt.namn}</td>
                       <td className="px-4 py-3 font-mono text-[11px] text-slate-500">{objekt.id}</td>
-                      <td className="px-4 py-3 text-[13px] text-slate-600">{objekt.kategori}</td>
+                      <td className="px-4 py-3 text-[13px] text-slate-600">
+                        {hittaUnderkategori(objekt.underkategoriId)?.namn ?? "—"}
+                      </td>
                       <td className="px-4 py-3 text-[13px] text-slate-600">{objekt.placering.rum}</td>
                       <td className="px-4 py-3 text-[13px] text-slate-600">{objekt.skick}</td>
                       <td className="px-4 py-3">

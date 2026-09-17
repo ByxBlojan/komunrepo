@@ -4,7 +4,7 @@ import { ArrowLeft, MapPin, Ruler, Tag, Wallet } from "lucide-react";
 import { Falt, Knapp, Kort, KortHuvud, Modal, Textyta, TomtLage } from "@/components/ui/primitiver";
 import { StatusMarke, SuccessBanner, useSuccessBanner } from "@/components/Delat";
 import { KategoriBild } from "@/data/bilder";
-import { HANDELSE_ETIKETT } from "@/data/typer";
+import { HANDELSE_ETIKETT, hittaUnderkategori } from "@/data/typer";
 import type { KommunCirkularState } from "@/lib/state";
 import { formatKronor } from "@/lib/utils";
 
@@ -61,7 +61,7 @@ export function ObjektPage({ state, objektId, onTillbaka }: Props) {
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="flex flex-col gap-5">
           <Kort>
-            <KategoriBild kategori={objekt.kategori} className="h-64 w-full" />
+            <KategoriBild underkategoriId={objekt.underkategoriId} className="h-64 w-full" />
             <div className="px-5 py-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
@@ -73,8 +73,16 @@ export function ObjektPage({ state, objektId, onTillbaka }: Props) {
               <p className="mt-3 text-[13px] leading-relaxed text-slate-700">{objekt.beskrivning}</p>
 
               <dl className="mt-5 grid gap-4 sm:grid-cols-2">
-                <Uppgift ikon={<Tag size={14} />} etikett="Kategori" varde={objekt.kategori} />
-                <Uppgift ikon={<Ruler size={14} />} etikett="Mått" varde={objekt.matt} />
+                <Uppgift
+                  ikon={<Tag size={14} />}
+                  etikett="Kategori"
+                  varde={hittaUnderkategori(objekt.underkategoriId)?.namn ?? "—"}
+                />
+                <Uppgift
+                  ikon={<Ruler size={14} />}
+                  etikett="Mått och antal"
+                  varde={objekt.antal > 1 ? `${objekt.matt} · ${objekt.antal} st` : objekt.matt}
+                />
                 <Uppgift ikon={<Wallet size={14} />} etikett="Uppskattat värde" varde={formatKronor(objekt.uppskattatVarde)} />
                 <Uppgift ikon={<Tag size={14} />} etikett="Skick" varde={`${objekt.skick} · inköpt ${objekt.inkopsar}`} />
                 <Uppgift
