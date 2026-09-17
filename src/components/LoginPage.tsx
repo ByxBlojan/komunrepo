@@ -1,17 +1,51 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Check, Loader2, Recycle, Smartphone, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowRight, Building2, Check, Loader2, Recycle, Smartphone, Truck, User, ShieldCheck } from "lucide-react";
 import { Falt, Inmatning, Knapp, Kort } from "@/components/ui/primitiver";
 import { AVDELNINGAR } from "@/data/mockdata";
-import { ANVANDARE, hittaAnvandarePaPersonnummer, type Anvandare } from "@/data/anvandare";
+import {
+  anvandarePerTyp,
+  hittaAnvandarePaPersonnummer,
+  type Anvandare,
+  type Anvandartyp,
+} from "@/data/anvandare";
 
-type Steg = "start" | "personnummer" | "vantar" | "klar";
+type Steg = "valjTyp" | "personnummer" | "vantar" | "klar";
 
 interface Props {
   onInloggad: (anvandare: Anvandare) => void;
 }
 
+interface TypVal {
+  typ: Anvandartyp;
+  rubrik: string;
+  text: string;
+  ikon: React.ElementType;
+}
+
+const TYPER: TypVal[] = [
+  {
+    typ: "kommun",
+    rubrik: "Kommun",
+    text: "Du arbetar i en kommunal verksamhet och vill hitta, erbjuda eller ta över inventarier internt.",
+    ikon: Building2,
+  },
+  {
+    typ: "privatperson",
+    rubrik: "Privatperson",
+    text: "Du är invånare och vill se vad kommunen erbjuder externt.",
+    ikon: User,
+  },
+  {
+    typ: "leverantor",
+    rubrik: "Leverantör",
+    text: "Du kör transporter åt kommunen och hanterar hämtning och leverans.",
+    ikon: Truck,
+  },
+];
+
 export function LoginPage({ onInloggad }: Props) {
-  const [steg, setSteg] = useState<Steg>("start");
+  const [steg, setSteg] = useState<Steg>("valjTyp");
+  const [typ, setTyp] = useState<Anvandartyp | null>(null);
   const [personnummer, setPersonnummer] = useState("");
   const [fel, setFel] = useState<string | null>(null);
   const [vald, setVald] = useState<Anvandare | null>(null);
@@ -20,6 +54,13 @@ export function LoginPage({ onInloggad }: Props) {
   useEffect(() => {
     return () => timers.current.forEach(clearTimeout);
   }, []);
+
+  const valjTyp = (nyTyp: Anvandartyp) => {
+    setTyp(nyTyp);
+    setPersonnummer("");
+    setFel(null);
+    setSteg("personnummer");
+  };
 
   const startaLegitimering = (anvandare: Anvandare) => {
     setVald(anvandare);
@@ -33,7 +74,8 @@ export function LoginPage({ onInloggad }: Props) {
   };
 
   const skickaPersonnummer = () => {
-    const traff = hittaAnvandarePaPersonnummer(personnummer);
+    if (!typ) return;
+    const traff = hittaAnvandarePaPersonnummer(personnummer, typ);
     if (!traff) {
       setFel("Personnumret finns inte bland demoanvändarna. Välj en identitet i listan nedan.");
       return;
@@ -41,9 +83,11 @@ export function LoginPage({ onInloggad }: Props) {
     startaLegitimering(traff);
   };
 
+  const valdTyp = TYPER.find((t) => t.typ === typ);
+
   return (
     <div className="flex min-h-full items-center justify-center px-4 py-10">
-      <div className="grid w-full max-w-4xl gap-8 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-center">
+      <div className="grid w-full max-w-5xl gap-8 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-center">
         <div>
           <div className="flex items-center gap-2.5">
             <span className="flex h-9 w-9 items-center justify-center rounded-md bg-[var(--primary)]">
@@ -77,36 +121,61 @@ export function LoginPage({ onInloggad }: Props) {
 
         <Kort>
           <div className="px-6 py-6">
-            {steg === "start" && (
+            {steg === "valjTyp" && (
               <>
-                <h2 className="text-base font-semibold text-slate-900">Logga in</h2>
+                <h2 className="text-base font-semibold text-slate-900">Vem loggar in?</h2>
                 <p className="mt-1 text-[13px] leading-relaxed text-slate-600">
-                  Legitimera dig för att se din verksamhets inventarier.
+                  Välj hur du använder plattformen, så visar vi rätt saker för dig.
                 </p>
 
-                <Knapp className="mt-5 h-11 w-full" onClick={() => setSteg("personnummer")}>
-                  <ShieldCheck size={17} />
-                  Logga in med BankID
-                </Knapp>
+                <div className="mt-5 flex flex-col gap-2">
+                  {TYPER.map((val) => {
+                    const Ikon = val.ikon;
+                    return (
+                      <button
+                        key={val.typ}
+                        onClick={() => valjTyp(val.typ)}
+                        className="group flex items-start gap-3 rounded-lg border border-[var(--border)] bg-white px-4 py-3 text-left transition-colors hover:border-[var(--primary)] hover:bg-[var(--primary-soft)]/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
+                      >
+                        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[var(--primary-soft)] text-[var(--primary-hover)]">
+                          <Ikon size={18} />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm font-semibold text-slate-900">{val.rubrik}</span>
+                          <span className="mt-0.5 block text-xs leading-relaxed text-slate-600">{val.text}</span>
+                        </span>
+                        <ArrowRight
+                          size={16}
+                          className="mt-2 shrink-0 text-slate-300 transition-colors group-hover:text-[var(--primary)]"
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
 
                 <DemoNotis />
               </>
             )}
 
-            {steg === "personnummer" && (
+            {steg === "personnummer" && valdTyp && (
               <>
                 <button
                   onClick={() => {
-                    setSteg("start");
+                    setSteg("valjTyp");
                     setFel(null);
                   }}
                   className="mb-4 inline-flex items-center gap-1.5 text-[13px] font-medium text-slate-600 hover:text-slate-900"
                 >
                   <ArrowLeft size={15} />
-                  Tillbaka
+                  Byt användartyp
                 </button>
 
-                <h2 className="text-base font-semibold text-slate-900">Mobilt BankID</h2>
+                <div className="mb-4 inline-flex items-center gap-1.5 rounded-full bg-[var(--primary-soft)] px-2.5 py-1">
+                  <valdTyp.ikon size={13} className="text-[var(--primary-hover)]" />
+                  <span className="text-[11px] font-semibold text-[var(--primary-hover)]">{valdTyp.rubrik}</span>
+                </div>
+
+                <h2 className="text-base font-semibold text-slate-900">Logga in med BankID</h2>
                 <p className="mt-1 text-[13px] leading-relaxed text-slate-600">
                   Ange personnummer så startas legitimeringen.
                 </p>
@@ -134,7 +203,7 @@ export function LoginPage({ onInloggad }: Props) {
                 )}
 
                 <Knapp className="mt-4 h-11 w-full" onClick={skickaPersonnummer}>
-                  <Smartphone size={17} />
+                  <ShieldCheck size={17} />
                   Starta BankID
                 </Knapp>
 
@@ -143,8 +212,14 @@ export function LoginPage({ onInloggad }: Props) {
                     Demoidentiteter
                   </p>
                   <ul className="mt-2 flex flex-col gap-1">
-                    {ANVANDARE.map((a) => {
+                    {anvandarePerTyp(valdTyp.typ).map((a) => {
                       const avdelning = AVDELNINGAR.find((av) => av.id === a.avdelningId);
+                      const under =
+                        a.typ === "kommun"
+                          ? `${avdelning?.namn} · ${a.roll}`
+                          : a.organisation
+                            ? `${a.organisation} · ${a.roll}`
+                            : a.roll;
                       return (
                         <li key={a.id}>
                           <button
@@ -152,9 +227,7 @@ export function LoginPage({ onInloggad }: Props) {
                             className="w-full rounded-md px-2.5 py-2 text-left hover:bg-slate-50"
                           >
                             <span className="block text-[13px] font-medium text-slate-800">{a.namn}</span>
-                            <span className="block text-[11px] text-slate-500">
-                              {avdelning?.namn} · {a.roll}
-                            </span>
+                            <span className="block text-[11px] text-slate-500">{under}</span>
                           </button>
                         </li>
                       );
@@ -171,6 +244,7 @@ export function LoginPage({ onInloggad }: Props) {
                 <p className="mt-1 max-w-[260px] text-[13px] leading-relaxed text-slate-600">
                   Legitimering pågår för {vald?.namn}. Håll appen öppen tills det är klart.
                 </p>
+                <Smartphone size={16} className="mt-4 text-slate-300" />
                 <DemoNotis />
               </div>
             )}
