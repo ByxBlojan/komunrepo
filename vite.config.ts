@@ -3,7 +3,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
-const REPONAMN = "kommuncirkular";
+const REPONAMN = "komunrepo";
 
 export default defineConfig(({ command }) => ({
   base: command === "build" ? `/${REPONAMN}/` : "/",
