@@ -1,4 +1,4 @@
-export type Anvandartyp = "kommun" | "privatperson" | "leverantor";
+export type Anvandartyp = "kommun" | "privatperson" | "leverantor" | "leveransbolag";
 
 export interface Anvandare {
   id: string;
@@ -53,12 +53,39 @@ export const ANVANDARE: Anvandare[] = [
   },
   {
     id: "anv-6",
-    typ: "leverantor",
+    typ: "leveransbolag",
     namn: "Peter Ahl",
     personnummer: "19880227-4471",
     avdelningId: "avd-d",
     roll: "Transportansvarig",
     organisation: "Nordisk Transport AB",
+  },
+  {
+    id: "anv-7",
+    typ: "leveransbolag",
+    namn: "Milo Fransson",
+    personnummer: "19950703-6654",
+    avdelningId: "avd-d",
+    roll: "Egen förare med skåpbil",
+    organisation: "Ansluten via TiptApp",
+  },
+  {
+    id: "anv-8",
+    typ: "leverantor",
+    namn: "Helena Bark",
+    personnummer: "19820419-7735",
+    avdelningId: "avd-d",
+    roll: "Säljansvarig",
+    organisation: "Kontorsmiljö Syd AB",
+  },
+  {
+    id: "anv-9",
+    typ: "leverantor",
+    namn: "Tomas Ruud",
+    personnummer: "19770128-5519",
+    avdelningId: "avd-d",
+    roll: "Verkstadsansvarig",
+    organisation: "Möbeltapetsering Väst",
   },
 ];
 

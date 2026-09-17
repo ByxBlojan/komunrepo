@@ -35,18 +35,20 @@ interface NavPost {
   typer: Anvandartyp[];
 }
 
+const ALLA: Anvandartyp[] = ["kommun", "privatperson", "leverantor", "leveransbolag"];
+
 const NAV: NavPost[] = [
-  { id: "valj-lage", etikett: "Start", ikon: Home, typer: ["kommun", "privatperson", "leverantor"] },
+  { id: "valj-lage", etikett: "Start", ikon: Home, typer: ALLA },
   { id: "handelsplats", etikett: "Köpa", ikon: Store, typer: ["kommun", "privatperson"] },
   { id: "mina", etikett: "Sälja", ikon: Boxes, typer: ["kommun"] },
   { id: "registrera", etikett: "Registrera", ikon: PackagePlus, typer: ["kommun"] },
   { id: "forfragningar", etikett: "Förfrågningar", ikon: Inbox, typer: ["kommun", "privatperson"] },
   { id: "leverans", etikett: "Leverans", ikon: PackageCheck, typer: ["kommun", "privatperson"] },
-  { id: "renovera", etikett: "Renovera", ikon: Wrench, typer: ["kommun"] },
-  { id: "upphandla", etikett: "Upphandla", ikon: Gavel, typer: ["kommun"] },
-  { id: "transportuppdrag", etikett: "Transportuppdrag", ikon: Truck, typer: ["leverantor"] },
-  { id: "skanna", etikett: "Skanna", ikon: QrCode, typer: ["kommun", "leverantor"] },
-  { id: "sa-fungerar-det", etikett: "Så fungerar det", ikon: Route, typer: ["kommun", "privatperson", "leverantor"] },
+  { id: "transportuppdrag", etikett: "Transportuppdrag", ikon: Truck, typer: ["leveransbolag"] },
+  { id: "renovera", etikett: "Renovera", ikon: Wrench, typer: ["kommun", "leverantor"] },
+  { id: "upphandla", etikett: "Upphandla", ikon: Gavel, typer: ["kommun", "leverantor"] },
+  { id: "skanna", etikett: "Skanna", ikon: QrCode, typer: ["kommun", "leveransbolag"] },
+  { id: "sa-fungerar-det", etikett: "Så fungerar det", ikon: Route, typer: ALLA },
 ];
 
 interface Props {

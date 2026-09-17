@@ -57,6 +57,22 @@ const LAGEN: Lage[] = [
     rubrik: "Transportuppdrag",
     text: "Se tilldelade hämtningar och leveranser. Skanna objektets QR-kod vid hämtning och vid leverans.",
     ikon: Truck,
+    typer: ["leveransbolag"],
+    klar: false,
+  },
+  {
+    id: "upphandla",
+    rubrik: "Upphandlingar",
+    text: "Se kommunens öppna behov och lämna anbud på det som inte kan täckas av befintliga inventarier.",
+    ikon: Gavel,
+    typer: ["leverantor"],
+    klar: false,
+  },
+  {
+    id: "renovera",
+    rubrik: "Renoveringsuppdrag",
+    text: "Ta emot uppdrag om omklädsel, lagning och rekonditionering av inventarier som redan finns i registret.",
+    ikon: Wrench,
     typer: ["leverantor"],
     klar: false,
   },
@@ -89,7 +105,7 @@ export function ValjLagePage({ anvandartyp, namn, onValj, onSaFungerarDet }: Pro
           const Ikon = lage.ikon;
           return (
             <button
-              key={lage.id}
+              key={lage.rubrik}
               onClick={() => onValj(lage.id)}
               className="group flex flex-col items-start gap-3 rounded-lg border border-[var(--card-border)] bg-white p-6 text-left transition-all hover:-translate-y-0.5 hover:border-[var(--primary)] hover:shadow-[0_8px_22px_rgba(15,23,42,0.08)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
             >

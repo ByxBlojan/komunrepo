@@ -1,5 +1,17 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, Building2, Check, Loader2, Recycle, Smartphone, Truck, User, ShieldCheck } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Building2,
+  Check,
+  Loader2,
+  Recycle,
+  Smartphone,
+  Store,
+  Truck,
+  User,
+  ShieldCheck,
+} from "lucide-react";
 import { Falt, Inmatning, Knapp, Kort } from "@/components/ui/primitiver";
 import { AVDELNINGAR } from "@/data/mockdata";
 import {
@@ -36,10 +48,16 @@ const TYPER: TypVal[] = [
     ikon: User,
   },
   {
+    typ: "leveransbolag",
+    rubrik: "Leveransbolag",
+    text: "Du kör hämtningar och leveranser åt kommunen — som transportbolag eller ansluten förare.",
+    ikon: Truck,
+  },
+  {
     typ: "leverantor",
     rubrik: "Leverantör",
-    text: "Du kör transporter åt kommunen och hanterar hämtning och leverans.",
-    ikon: Truck,
+    text: "Du säljer till kommunen eller utför renoveringar av befintliga inventarier.",
+    ikon: Store,
   },
 ];
 
