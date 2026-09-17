@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { AVDELNINGAR, FORFRAGNINGAR, INVENTARIER } from "@/data/mockdata";
 import { ANVANDARE, type Anvandare } from "@/data/anvandare";
+import { TRANSPORTUPPDRAG, type Transportuppdrag } from "@/data/uppdrag";
 import type { Forfragan, Inventarie, Skick } from "@/data/typer";
 import { idagIso } from "@/lib/utils";
 
@@ -49,6 +50,7 @@ function nastaId(underkategoriId: string, befintliga: Inventarie[]): string {
 export function useKommunCirkular() {
   const [inventarier, setInventarier] = useState<Inventarie[]>(INVENTARIER);
   const [forfragningar, setForfragningar] = useState<Forfragan[]>(FORFRAGNINGAR);
+  const [uppdrag, setUppdrag] = useState<Transportuppdrag[]>(TRANSPORTUPPDRAG);
   const [aktivAnvandareId, setAktivAnvandareId] = useState<string | null>(null);
 
   const aktivAnvandare = useMemo(
@@ -255,6 +257,44 @@ export function useKommunCirkular() {
     [inventarier, aktivAvdelningId],
   );
 
+  const taUppdrag = useCallback(
+    (uppdragId: string) => {
+      if (!aktivAnvandareId) return;
+      setUppdrag((prev) =>
+        prev.map((u) =>
+          u.id === uppdragId && u.status === "ledigt"
+            ? { ...u, status: "taget", utforareId: aktivAnvandareId }
+            : u,
+        ),
+      );
+    },
+    [aktivAnvandareId],
+  );
+
+  const markeraLevererat = useCallback((uppdragId: string) => {
+    setUppdrag((prev) =>
+      prev.map((u) => (u.id === uppdragId && u.status === "taget" ? { ...u, status: "levererat" } : u)),
+    );
+  }, []);
+
+  const ledigaUppdrag = useMemo(() => uppdrag.filter((u) => u.status === "ledigt"), [uppdrag]);
+
+  const minaUppdrag = useMemo(
+    () => uppdrag.filter((u) => u.utforareId === aktivAnvandareId && u.status !== "ledigt"),
+    [uppdrag, aktivAnvandareId],
+  );
+
+  const statistik = useMemo(() => {
+    const flyttade = inventarier.filter((i) => i.status === "flyttad");
+    const sparat = flyttade.reduce((summa, i) => summa + i.uppskattatVarde * i.antal, 0);
+    const paMarknaden = inventarier
+      .filter((i) => i.status === "tillganglig")
+      .reduce((summa, i) => summa + i.antal, 0);
+    const pagaende = uppdrag.filter((u) => u.status === "taget").length;
+
+    return { sparat, paMarknaden, pagaende, antalFlyttade: flyttade.length };
+  }, [inventarier, uppdrag]);
+
   return {
     avdelningar: AVDELNINGAR,
     anvandare: ANVANDARE,
@@ -274,6 +314,11 @@ export function useKommunCirkular() {
     inkommandeForfragningar,
     egnaForfragningar,
     antalAttGodkanna,
+    ledigaUppdrag,
+    minaUppdrag,
+    taUppdrag,
+    markeraLevererat,
+    statistik,
   };
 }
 

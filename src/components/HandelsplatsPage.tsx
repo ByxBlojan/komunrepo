@@ -41,7 +41,7 @@ export function HandelsplatsPage({ state, onOppnaObjekt }: Props) {
     for (const objekt of tillgangliga) {
       const u = hittaUnderkategori(objekt.underkategoriId);
       if (!u) continue;
-      karta.set(u.huvudkategori, (karta.get(u.huvudkategori) ?? 0) + 1);
+      karta.set(u.huvudkategori, (karta.get(u.huvudkategori) ?? 0) + objekt.antal);
     }
     return karta;
   }, [tillgangliga]);
@@ -49,10 +49,15 @@ export function HandelsplatsPage({ state, onOppnaObjekt }: Props) {
   const antalPerUnder = useMemo(() => {
     const karta = new Map<string, number>();
     for (const objekt of tillgangliga) {
-      karta.set(objekt.underkategoriId, (karta.get(objekt.underkategoriId) ?? 0) + 1);
+      karta.set(objekt.underkategoriId, (karta.get(objekt.underkategoriId) ?? 0) + objekt.antal);
     }
     return karta;
   }, [tillgangliga]);
+
+  const totaltAntal = useMemo(
+    () => tillgangliga.reduce((summa, i) => summa + i.antal, 0),
+    [tillgangliga],
+  );
 
   const sokning = sok.trim().toLowerCase();
   const visarResultat = sokning !== "" || huvud !== null;
@@ -100,7 +105,7 @@ export function HandelsplatsPage({ state, onOppnaObjekt }: Props) {
         <div>
           <h1 className="text-xl font-semibold text-slate-900">Handelsplats</h1>
           <p className="mt-1 text-[13px] text-slate-600">
-            {tillgangliga.length} inventarier som kommunens verksamheter erbjuder just nu
+            {totaltAntal.toLocaleString("sv-SE")} saker som kommunens verksamheter erbjuder just nu
           </p>
         </div>
 
@@ -148,7 +153,7 @@ export function HandelsplatsPage({ state, onOppnaObjekt }: Props) {
                 <div>
                   <h2 className="text-[15px] font-semibold text-slate-900">{kategori}</h2>
                   <p className="mt-0.5 text-xs text-slate-500">
-                    {antalPerHuvud.get(kategori) ?? 0} inventarier ·{" "}
+                    {(antalPerHuvud.get(kategori) ?? 0).toLocaleString("sv-SE")} st ·{" "}
                     {underkategoriernaFor(kategori).length} underkategorier
                   </p>
                 </div>
@@ -246,7 +251,7 @@ export function HandelsplatsPage({ state, onOppnaObjekt }: Props) {
                 </Knapp>
               </TomtLage>
             ) : vy === "rutnat" ? (
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-4">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(230px,1fr))] sm:gap-4">
                 {traffar.map((objekt) => (
                   <Annonskort
                     key={objekt.id}
@@ -329,7 +334,9 @@ function UnderChip({
       }
     >
       {etikett}
-      {antal !== undefined && <span className="ml-1.5 text-[11px] text-slate-400">{antal}</span>}
+      {antal !== undefined && (
+        <span className="ml-1.5 text-[11px] text-slate-400">{antal.toLocaleString("sv-SE")}</span>
+      )}
     </button>
   );
 }
@@ -403,9 +410,9 @@ function Annonsrad({ objekt, avdelningsnamn, onOppna }: AnnonsProps) {
   return (
     <button
       onClick={onOppna}
-      className="flex items-stretch gap-4 overflow-clip rounded-lg border border-[var(--card-border)] bg-white text-left transition-shadow hover:shadow-[0_4px_14px_rgba(15,23,42,0.07)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
+      className="flex items-stretch gap-3 overflow-clip rounded-lg border sm:gap-4 border-[var(--card-border)] bg-white text-left transition-shadow hover:shadow-[0_4px_14px_rgba(15,23,42,0.07)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
     >
-      <KategoriBild underkategoriId={objekt.underkategoriId} className="h-[104px] w-[132px] shrink-0" />
+      <KategoriBild underkategoriId={objekt.underkategoriId} className="h-[92px] w-[100px] shrink-0 sm:h-[104px] sm:w-[132px]" />
 
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-1 py-3">
         <div className="flex items-center gap-2">
@@ -424,7 +431,7 @@ function Annonsrad({ objekt, avdelningsnamn, onOppna }: AnnonsProps) {
         </div>
       </div>
 
-      <div className="flex shrink-0 flex-col items-end justify-center gap-1 px-5 py-3">
+      <div className="flex shrink-0 flex-col items-end justify-center gap-1 px-3 py-3 sm:px-5">
         <span className="text-sm font-semibold text-slate-900">{formatKronor(objekt.uppskattatVarde)}</span>
         <span className="text-[11px] text-slate-400">uppskattat värde</span>
       </div>

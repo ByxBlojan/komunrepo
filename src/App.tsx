@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { LogOut } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
 import { AppSidebar, type Page } from "@/components/AppSidebar";
 import { LoginPage } from "@/components/LoginPage";
 import { ValjLagePage } from "@/components/ValjLagePage";
@@ -11,6 +11,7 @@ import { ForfragningarPage } from "@/components/ForfragningarPage";
 import { SkannaPage } from "@/components/SkannaPage";
 import { SaFungerarDetPage } from "@/components/SaFungerarDetPage";
 import { KommandePage } from "@/components/KommandePage";
+import { TransportuppdragPage } from "@/components/TransportuppdragPage";
 import { Vallista } from "@/components/ui/primitiver";
 import { useKommunCirkular } from "@/lib/state";
 
@@ -23,6 +24,7 @@ export default function App() {
   const state = useKommunCirkular();
   const [sida, setSida] = useState<Page>("valj-lage");
   const [objektId, setObjektId] = useState<string | null>(null);
+  const [menyOppen, setMenyOppen] = useState(false);
 
   const oppnaObjekt = useCallback((id: string) => {
     setObjektId(id);
@@ -33,6 +35,7 @@ export default function App() {
   const navigera = useCallback((ny: Page) => {
     setSida(ny);
     setObjektId(null);
+    setMenyOppen(false);
     if (window.location.hash) {
       history.replaceState(null, "", window.location.pathname + window.location.search);
     }
@@ -77,15 +80,25 @@ export default function App() {
         anvandartyp={anvandartyp}
         onNavigera={navigera}
         antalAttGodkanna={state.antalAttGodkanna}
+        oppen={menyOppen}
+        onStang={() => setMenyOppen(false)}
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center justify-between gap-4 border-b border-[var(--border)] bg-white px-6 py-2.5">
-          <p className="text-[13px] text-slate-500">
+        <header className="flex items-center justify-between gap-3 border-b border-[var(--border)] bg-white px-4 py-2.5 sm:px-6">
+          <button
+            onClick={() => setMenyOppen(true)}
+            aria-label="Öppna menyn"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-slate-600 hover:bg-slate-100 lg:hidden"
+          >
+            <Menu size={19} />
+          </button>
+
+          <p className="hidden text-[13px] text-slate-500 xl:block">
             Demoläge — byt identitet för att se båda sidor av ett övertagande
           </p>
 
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 flex-1 items-center justify-end gap-2 sm:gap-3">
             <Vallista
               aria-label="Inloggad som"
               value={state.aktivAnvandare.id}
@@ -96,7 +109,7 @@ export default function App() {
                   navigera("valj-lage");
                 }
               }}
-              className="w-[300px]"
+              className="w-full max-w-[300px] min-w-0 text-[13px]"
             >
               {state.anvandare.map((a) => {
                 const avdelning = state.avdelningar.find((av) => av.id === a.avdelningId);
@@ -114,19 +127,21 @@ export default function App() {
                 state.loggaUt();
                 setSida("valj-lage");
               }}
-              className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[13px] font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+              aria-label="Logga ut"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[13px] font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900"
             >
               <LogOut size={15} />
-              Logga ut
+              <span className="hidden sm:inline">Logga ut</span>
             </button>
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto px-6 py-6">
+        <main className="flex-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6">
           {sida === "valj-lage" && (
             <ValjLagePage
               anvandartyp={anvandartyp}
               namn={state.aktivAnvandare.namn}
+              statistik={state.statistik}
               onValj={navigera}
               onSaFungerarDet={() => navigera("sa-fungerar-det")}
             />
@@ -142,7 +157,13 @@ export default function App() {
             <ObjektPage state={state} objektId={objektId} onTillbaka={() => navigera("handelsplats")} />
           )}
 
-          {sida === "registrera" && <RegistreraPage state={state} onOppnaObjekt={oppnaObjekt} />}
+          {sida === "registrera" && (
+            <RegistreraPage
+              state={state}
+              onOppnaObjekt={oppnaObjekt}
+              onKlar={() => navigera("valj-lage")}
+            />
+          )}
 
           {sida === "mina" && (
             <MinaInventarierPage
@@ -205,21 +226,7 @@ export default function App() {
             />
           )}
 
-          {sida === "transportuppdrag" && (
-            <KommandePage
-              rubrik="Transportuppdrag"
-              ingress="Hämtningar och leveranser som kommunen lagt ut på transportbolag."
-              punkter={[
-                "Se tilldelade uppdrag med hämtnings- och leveransadress",
-                "Kontaktpersoner, antal objekt och bärförutsättningar",
-                "Skanna objektets QR-kod vid hämtning och vid leverans",
-                "Fotografera och rapportera eventuella skador direkt i uppdraget",
-                "Statusen syns i realtid för både avlämnande och mottagande verksamhet",
-              ]}
-              fas="Planerad till fas 2. I fas 1 skapas transportuppdrag som order eller PDF."
-              onTillbaka={() => navigera("valj-lage")}
-            />
-          )}
+          {sida === "transportuppdrag" && <TransportuppdragPage state={state} />}
         </main>
       </div>
     </div>

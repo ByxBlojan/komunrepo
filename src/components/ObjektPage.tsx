@@ -122,7 +122,7 @@ export function ObjektPage({ state, objektId, onTillbaka }: Props) {
             <KortHuvud>QR-kod</KortHuvud>
             <div className="flex flex-col items-center gap-3 px-5 py-5">
               <div className="rounded-md border border-[var(--border)] bg-white p-3">
-                <QRCodeSVG value={qrVarde} size={168} level="M" />
+                <QRCodeSVG value={qrVarde} size={150} level="M" className="h-auto w-full max-w-[168px]" />
               </div>
               <p className="text-center text-xs leading-relaxed text-slate-600">
                 Märk objektet med koden. Skanning leder hit — uppgifterna visas alltid som de ser ut just nu.

@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { Falt, Inmatning, Knapp, Kort, KortHuvud, Textyta, Vallista } from "@/components/ui/primitiver";
-import { Sidrubrik, SuccessBanner, useSuccessBanner } from "@/components/Delat";
-import { KategoriBild } from "@/data/bilder";
+import { ArrowLeft, Check, ChevronDown, Printer } from "lucide-react";
+import { Inmatning, Knapp, Kort, Textyta } from "@/components/ui/primitiver";
+import { HuvudkategoriBild, KategoriBild } from "@/data/bilder";
 import {
   HUVUDKATEGORIER,
-  SKICK_VARDEN,
   hittaUnderkategori,
   underkategoriernaFor,
   type Huvudkategori,
@@ -16,47 +15,53 @@ import type { KommunCirkularState } from "@/lib/state";
 interface Props {
   state: KommunCirkularState;
   onOppnaObjekt: (id: string) => void;
+  onKlar: () => void;
 }
+
+const SKICK_VAL: { varde: Skick; etikett: string; text: string }[] = [
+  { varde: "Nyskick", etikett: "Som ny", text: "Inga synliga skador" },
+  { varde: "Bra", etikett: "Bra", text: "Några märken, fungerar väl" },
+  { varde: "Slitet", etikett: "Sliten", text: "Tydligt använd" },
+];
 
 const TOMT = {
   namn: "",
   huvudkategori: "Möbler" as Huvudkategori,
   underkategoriId: "skrivbord",
-  beskrivning: "",
+  rum: "",
   skick: "Bra" as Skick,
-  matt: "",
   antal: "1",
+  beskrivning: "",
+  matt: "",
   inkopsar: "",
   varde: "",
-  rum: "",
 };
 
-export function RegistreraPage({ state, onOppnaObjekt }: Props) {
+export function RegistreraPage({ state, onOppnaObjekt, onKlar }: Props) {
   const [falt, setFalt] = useState(TOMT);
   const [fel, setFel] = useState<string | null>(null);
-  const [senasteId, setSenasteId] = useState<string | null>(null);
-  const banner = useSuccessBanner();
+  const [visaMer, setVisaMer] = useState(false);
+  const [klarId, setKlarId] = useState<string | null>(null);
 
   const andra = (nyckel: keyof typeof TOMT, varde: string) => {
     setFalt((prev) => ({ ...prev, [nyckel]: varde }));
+    setFel(null);
   };
 
-  const bytHuvudkategori = (huvud: Huvudkategori) => {
-    const forsta = underkategoriernaFor(huvud)[0];
-    setFalt((prev) => ({ ...prev, huvudkategori: huvud, underkategoriId: forsta.id }));
+  const valjHuvudkategori = (huvud: Huvudkategori) => {
+    setFalt((prev) => ({ ...prev, huvudkategori: huvud, underkategoriId: underkategoriernaFor(huvud)[0].id }));
   };
 
   const spara = () => {
     if (!falt.namn.trim()) {
-      setFel("Ange vad inventariet heter.");
+      setFel("Skriv vad det är för sak.");
       return;
     }
     if (!falt.rum.trim()) {
-      setFel("Ange var objektet står i dag.");
+      setFel("Skriv var saken står.");
       return;
     }
 
-    setFel(null);
     const id = state.registreraInventarie({
       namn: falt.namn.trim(),
       underkategoriId: falt.underkategoriId,
@@ -69,184 +74,254 @@ export function RegistreraPage({ state, onOppnaObjekt }: Props) {
       rum: falt.rum.trim(),
     });
 
-    setSenasteId(id);
-    setFalt(TOMT);
-    banner.visa(`Inventariet registrerades som ${id} och publicerades på handelsplatsen.`);
+    setKlarId(id);
   };
 
+  if (klarId) {
+    return <Kvitto id={klarId} onOppna={() => onOppnaObjekt(klarId)} onMerTillLagg={() => { setFalt(TOMT); setKlarId(null); }} onKlar={onKlar} />;
+  }
+
   return (
-    <div>
-      <Sidrubrik
-        titel="Registrera inventarie"
-        beskrivning="Objektet publiceras direkt på handelsplatsen och får ett id som kan märkas upp med QR-kod."
-      />
+    <div className="mx-auto max-w-2xl">
+      <button
+        onClick={onKlar}
+        className="mb-4 inline-flex items-center gap-1.5 text-[13px] font-medium text-slate-600 hover:text-slate-900"
+      >
+        <ArrowLeft size={15} />
+        Tillbaka
+      </button>
 
-      <SuccessBanner meddelande={banner.meddelande} />
+      <h1 className="text-2xl font-semibold text-slate-900">Lämna vidare något</h1>
+      <p className="mt-2 text-[15px] leading-relaxed text-slate-600">
+        Fyll i tre saker, så blir den synlig för alla verksamheter i kommunen.
+      </p>
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
-        <Kort>
-          <KortHuvud>Uppgifter om objektet</KortHuvud>
-          <div className="grid gap-4 px-5 py-5 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <Falt etikett="Vad är det för inventarie?" htmlFor="namn">
-                <Inmatning
-                  id="namn"
-                  value={falt.namn}
-                  onChange={(e) => andra("namn", e.target.value)}
-                  placeholder="Höj- och sänkbart skrivbord"
-                />
-              </Falt>
+      <div className="mt-7 flex flex-col gap-6">
+        <Fraga nummer={1} rubrik="Vad är det för sak?">
+          <Inmatning
+            value={falt.namn}
+            onChange={(e) => andra("namn", e.target.value)}
+            placeholder="Till exempel: höj- och sänkbart skrivbord"
+            className="h-12 text-[15px]"
+            autoFocus
+          />
+
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {HUVUDKATEGORIER.map((huvud) => (
+              <button
+                key={huvud}
+                onClick={() => valjHuvudkategori(huvud)}
+                className={
+                  "flex items-center gap-2.5 overflow-clip rounded-lg border-2 p-2 text-left transition-colors " +
+                  (falt.huvudkategori === huvud
+                    ? "border-[var(--primary)] bg-[var(--primary-soft)]"
+                    : "border-[var(--border)] bg-white hover:border-slate-300")
+                }
+              >
+                <HuvudkategoriBild huvud={huvud} className="h-10 w-12 shrink-0 rounded" />
+                <span className="text-[13px] font-medium leading-tight text-slate-800">{huvud}</span>
+              </button>
+            ))}
+          </div>
+
+          {underkategoriernaFor(falt.huvudkategori).length > 1 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {underkategoriernaFor(falt.huvudkategori).map((u) => (
+                <button
+                  key={u.id}
+                  onClick={() => andra("underkategoriId", u.id)}
+                  className={
+                    "rounded-full border px-3.5 py-1.5 text-[13px] transition-colors " +
+                    (falt.underkategoriId === u.id
+                      ? "border-[var(--primary)] bg-[var(--primary-soft)] font-medium text-[var(--primary-hover)]"
+                      : "border-[var(--border)] bg-white text-slate-600 hover:border-slate-300")
+                  }
+                >
+                  {u.namn}
+                </button>
+              ))}
             </div>
+          )}
+        </Fraga>
 
-            <Falt etikett="Kategori" htmlFor="huvudkategori">
-              <Vallista
-                id="huvudkategori"
-                value={falt.huvudkategori}
-                onChange={(e) => bytHuvudkategori(e.target.value as Huvudkategori)}
-              >
-                {HUVUDKATEGORIER.map((h) => (
-                  <option key={h} value={h}>
-                    {h}
-                  </option>
-                ))}
-              </Vallista>
-            </Falt>
+        <Fraga nummer={2} rubrik="Var står den?">
+          <Inmatning
+            value={falt.rum}
+            onChange={(e) => andra("rum", e.target.value)}
+            placeholder="Till exempel: rum 214, plan 3"
+            className="h-12 text-[15px]"
+          />
+          <p className="mt-2 text-[13px] text-slate-500">
+            Verksamhet och adress fylls i automatiskt: {state.aktivAvdelning.namn}
+          </p>
+        </Fraga>
 
-            <Falt etikett="Underkategori" htmlFor="underkategori">
-              <Vallista
-                id="underkategori"
-                value={falt.underkategoriId}
-                onChange={(e) => andra("underkategoriId", e.target.value)}
+        <Fraga nummer={3} rubrik="Hur är skicket?">
+          <div className="grid gap-2 sm:grid-cols-3">
+            {SKICK_VAL.map((val) => (
+              <button
+                key={val.varde}
+                onClick={() => andra("skick", val.varde)}
+                className={
+                  "rounded-lg border-2 px-4 py-3 text-left transition-colors " +
+                  (falt.skick === val.varde
+                    ? "border-[var(--primary)] bg-[var(--primary-soft)]"
+                    : "border-[var(--border)] bg-white hover:border-slate-300")
+                }
               >
-                {underkategoriernaFor(falt.huvudkategori).map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.namn}
-                  </option>
-                ))}
-              </Vallista>
-            </Falt>
+                <span className="block text-[15px] font-semibold text-slate-900">{val.etikett}</span>
+                <span className="mt-0.5 block text-xs text-slate-600">{val.text}</span>
+              </button>
+            ))}
+          </div>
 
-            <div className="sm:col-span-2">
-              <Falt
-                etikett="Beskrivning"
-                htmlFor="beskrivning"
-                hjalptext="Nämn skador och slitage — det minskar antalet avbokade hämtningar."
-              >
+          <div className="mt-4 flex items-center gap-3">
+            <label htmlFor="antal" className="text-[14px] text-slate-700">
+              Hur många?
+            </label>
+            <Inmatning
+              id="antal"
+              type="number"
+              min={1}
+              value={falt.antal}
+              onChange={(e) => andra("antal", e.target.value)}
+              className="h-11 w-24 text-center text-[15px]"
+            />
+          </div>
+        </Fraga>
+      </div>
+
+      <div className="mt-6">
+        <button
+          onClick={() => setVisaMer((v) => !v)}
+          className="inline-flex items-center gap-1.5 text-[13px] font-medium text-slate-600 hover:text-slate-900"
+        >
+          <ChevronDown size={15} className={visaMer ? "rotate-180 transition-transform" : "transition-transform"} />
+          Fler uppgifter, om du vill
+        </button>
+
+        {visaMer && (
+          <Kort className="mt-3">
+            <div className="flex flex-col gap-4 px-5 py-5">
+              <div>
+                <label htmlFor="besk" className="mb-1.5 block text-[13px] font-medium text-slate-700">
+                  Beskrivning
+                </label>
                 <Textyta
-                  id="beskrivning"
-                  rows={4}
+                  id="besk"
+                  rows={3}
                   value={falt.beskrivning}
                   onChange={(e) => andra("beskrivning", e.target.value)}
-                  placeholder="Elektriskt höj- och sänkbart skrivbord med minnesfunktion. Skiva i björklaminat."
+                  placeholder="Nämn gärna skador eller om något saknas."
                 />
-              </Falt>
-            </div>
-
-            <Falt etikett="Skick" htmlFor="skick">
-              <Vallista id="skick" value={falt.skick} onChange={(e) => andra("skick", e.target.value)}>
-                {SKICK_VARDEN.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </Vallista>
-            </Falt>
-
-            <Falt etikett="Antal" htmlFor="antal">
-              <Inmatning
-                id="antal"
-                type="number"
-                min={1}
-                value={falt.antal}
-                onChange={(e) => andra("antal", e.target.value)}
-              />
-            </Falt>
-
-            <Falt etikett="Mått" htmlFor="matt">
-              <Inmatning
-                id="matt"
-                value={falt.matt}
-                onChange={(e) => andra("matt", e.target.value)}
-                placeholder="160 × 80 cm"
-              />
-            </Falt>
-
-            <Falt etikett="Var står det i dag?" htmlFor="rum">
-              <Inmatning
-                id="rum"
-                value={falt.rum}
-                onChange={(e) => andra("rum", e.target.value)}
-                placeholder="Kontorslandskap öst"
-              />
-            </Falt>
-
-            <Falt etikett="Inköpsår" htmlFor="inkopsar">
-              <Inmatning
-                id="inkopsar"
-                type="number"
-                value={falt.inkopsar}
-                onChange={(e) => andra("inkopsar", e.target.value)}
-                placeholder="2019"
-              />
-            </Falt>
-
-            <Falt etikett="Uppskattat värde per styck (kr)" htmlFor="varde">
-              <Inmatning
-                id="varde"
-                type="number"
-                value={falt.varde}
-                onChange={(e) => andra("varde", e.target.value)}
-                placeholder="3200"
-              />
-            </Falt>
-
-            {fel && (
-              <div className="sm:col-span-2">
-                <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-[13px] text-amber-800">
-                  {fel}
-                </p>
               </div>
-            )}
 
-            <div className="flex items-center gap-2 sm:col-span-2">
-              <Knapp onClick={spara}>Registrera och publicera</Knapp>
-              <span className="text-xs text-slate-500">Registreras av {state.aktivAvdelning.namn}</span>
-            </div>
-          </div>
-        </Kort>
-
-        <div className="flex flex-col gap-5">
-          <Kort>
-            <KortHuvud>Förhandsvisning</KortHuvud>
-            <KategoriBild underkategoriId={falt.underkategoriId} className="h-40 w-full" />
-            <div className="px-5 py-4">
-              <p className="text-sm font-semibold text-slate-900">
-                {falt.namn.trim() || "Namnlöst inventarie"}
-              </p>
-              <p className="mt-1 text-xs text-slate-600">
-                {hittaUnderkategori(falt.underkategoriId)?.namn} · {falt.skick}
-              </p>
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div>
+                  <label htmlFor="matt" className="mb-1.5 block text-[13px] font-medium text-slate-700">
+                    Mått
+                  </label>
+                  <Inmatning id="matt" value={falt.matt} onChange={(e) => andra("matt", e.target.value)} placeholder="160 × 80 cm" />
+                </div>
+                <div>
+                  <label htmlFor="ar" className="mb-1.5 block text-[13px] font-medium text-slate-700">
+                    Inköpsår
+                  </label>
+                  <Inmatning id="ar" type="number" value={falt.inkopsar} onChange={(e) => andra("inkopsar", e.target.value)} placeholder="2019" />
+                </div>
+                <div>
+                  <label htmlFor="varde" className="mb-1.5 block text-[13px] font-medium text-slate-700">
+                    Värde per styck
+                  </label>
+                  <Inmatning id="varde" type="number" value={falt.varde} onChange={(e) => andra("varde", e.target.value)} placeholder="3200" />
+                </div>
+              </div>
             </div>
           </Kort>
+        )}
+      </div>
 
-          {senasteId && (
-            <Kort>
-              <KortHuvud>Märk upp objektet</KortHuvud>
-              <div className="flex flex-col items-center gap-3 px-5 py-5">
-                <div className="rounded-md border border-[var(--border)] p-3">
-                  <QRCodeSVG
-                    value={`${window.location.origin}${window.location.pathname}#/objekt/${senasteId}`}
-                    size={140}
-                    level="M"
-                  />
-                </div>
-                <p className="font-mono text-[11px] text-slate-500">{senasteId}</p>
-                <Knapp variant="kontur" storlek="sm" onClick={() => onOppnaObjekt(senasteId)}>
-                  Öppna objektsidan
-                </Knapp>
-              </div>
-            </Kort>
-          )}
+      {fel && (
+        <p className="mt-5 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-[14px] text-amber-800">
+          {fel}
+        </p>
+      )}
+
+      <div className="mt-7 flex items-center gap-4 border-t border-[var(--border)] pt-6">
+        <Knapp className="h-12 px-8 text-[15px]" onClick={spara}>
+          Lägg upp
+        </Knapp>
+        <div className="flex items-center gap-2 text-[13px] text-slate-500">
+          <KategoriBild underkategoriId={falt.underkategoriId} className="h-9 w-11 rounded" />
+          {hittaUnderkategori(falt.underkategoriId)?.namn}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Fraga({ nummer, rubrik, children }: { nummer: number; rubrik: string; children: React.ReactNode }) {
+  return (
+    <section>
+      <div className="mb-3 flex items-center gap-2.5">
+        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--primary)] text-[13px] font-semibold text-white">
+          {nummer}
+        </span>
+        <h2 className="text-[17px] font-semibold text-slate-900">{rubrik}</h2>
+      </div>
+      <div className="pl-[38px]">{children}</div>
+    </section>
+  );
+}
+
+interface KvittoProps {
+  id: string;
+  onOppna: () => void;
+  onMerTillLagg: () => void;
+  onKlar: () => void;
+}
+
+function Kvitto({ id, onOppna, onMerTillLagg, onKlar }: KvittoProps) {
+  const adress = `${window.location.origin}${window.location.pathname}#/objekt/${id}`;
+
+  return (
+    <div className="mx-auto max-w-lg py-4 text-center">
+      <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[var(--primary-soft)]">
+        <Check size={32} className="text-[var(--primary)]" />
+      </span>
+
+      <h1 className="mt-5 text-2xl font-semibold text-slate-900">Klart!</h1>
+      <p className="mx-auto mt-2 max-w-sm text-[15px] leading-relaxed text-slate-600">
+        Saken syns nu för alla verksamheter i kommunen. Skriv ut lappen och tejpa den på saken.
+      </p>
+
+      <Kort className="mt-6">
+        <div className="flex flex-col items-center gap-3 px-6 py-7">
+          <div className="rounded-lg border border-[var(--border)] bg-white p-4">
+            <QRCodeSVG value={adress} size={180} level="M" />
+          </div>
+          <p className="font-mono text-[15px] font-semibold text-slate-800">{id}</p>
+          <p className="max-w-xs text-[13px] leading-relaxed text-slate-500">
+            Den som skannar koden ser vad saken är, var den står och vem som ansvarar för den.
+          </p>
+        </div>
+      </Kort>
+
+      <div className="mt-6 flex flex-col gap-2">
+        <Knapp className="h-12 text-[15px]" onClick={() => window.print()}>
+          <Printer size={17} />
+          Skriv ut lappen
+        </Knapp>
+        <Knapp variant="kontur" className="h-11" onClick={onOppna}>
+          Titta på annonsen
+        </Knapp>
+        <div className="mt-2 flex justify-center gap-4">
+          <button onClick={onMerTillLagg} className="text-[13px] font-medium text-slate-600 underline underline-offset-2 hover:text-slate-900">
+            Lägg upp något mer
+          </button>
+          <button onClick={onKlar} className="text-[13px] font-medium text-slate-600 underline underline-offset-2 hover:text-slate-900">
+            Till startsidan
+          </button>
         </div>
       </div>
     </div>

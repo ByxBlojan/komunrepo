@@ -11,6 +11,7 @@ import {
   Truck,
   Wrench,
   Recycle,
+  X,
 } from "lucide-react";
 import type { Anvandartyp } from "@/data/anvandare";
 
@@ -56,27 +57,54 @@ interface Props {
   anvandartyp: Anvandartyp;
   onNavigera: (sida: Page) => void;
   antalAttGodkanna: number;
+  oppen: boolean;
+  onStang: () => void;
 }
 
-export function AppSidebar({ aktivSida, anvandartyp, onNavigera, antalAttGodkanna }: Props) {
+export function AppSidebar({ aktivSida, anvandartyp, onNavigera, antalAttGodkanna, oppen, onStang }: Props) {
   const poster = NAV.filter((p) => p.typer.includes(anvandartyp));
 
   return (
-    <aside className="flex w-60 shrink-0 flex-col border-r border-[var(--border)] bg-white">
-      <button
-        onClick={() => onNavigera("valj-lage")}
-        className="flex items-center gap-2.5 border-b border-[var(--border)] px-5 py-4 text-left hover:bg-slate-50"
-      >
-        <span className="flex h-8 w-8 items-center justify-center rounded-md bg-[var(--primary)]">
-          <Recycle size={17} className="text-white" />
-        </span>
-        <span>
-          <span className="block text-sm font-semibold leading-tight text-slate-900">KommunCirkulär</span>
-          <span className="block text-[11px] text-slate-500">Internt återbruk</span>
-        </span>
-      </button>
+    <>
+      {oppen && (
+        <div
+          onClick={onStang}
+          className="fixed inset-0 z-40 bg-slate-900/40 lg:hidden"
+          aria-hidden="true"
+        />
+      )}
 
-      <nav className="flex flex-1 flex-col gap-0.5 p-3">
+      <aside
+        className={
+          "z-50 flex w-64 shrink-0 flex-col border-r border-[var(--border)] bg-white transition-transform lg:z-auto lg:w-60 lg:translate-x-0 " +
+          "fixed inset-y-0 left-0 lg:static " +
+          (oppen ? "translate-x-0" : "-translate-x-full")
+        }
+      >
+        <div className="flex items-center justify-between border-b border-[var(--border)]">
+          <button
+            onClick={() => onNavigera("valj-lage")}
+            className="flex flex-1 items-center gap-2.5 px-5 py-4 text-left hover:bg-slate-50"
+          >
+            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-[var(--primary)]">
+              <Recycle size={17} className="text-white" />
+            </span>
+            <span>
+              <span className="block text-sm font-semibold leading-tight text-slate-900">KommunCirkulär</span>
+              <span className="block text-[11px] text-slate-500">Internt återbruk</span>
+            </span>
+          </button>
+
+          <button
+            onClick={onStang}
+            aria-label="Stäng menyn"
+            className="mr-3 flex h-9 w-9 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 lg:hidden"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <nav className="flex flex-1 flex-col gap-0.5 p-3">
         {poster.map((post) => {
           const Ikon = post.ikon;
           const aktiv =
@@ -102,13 +130,14 @@ export function AppSidebar({ aktivSida, anvandartyp, onNavigera, antalAttGodkann
             </button>
           );
         })}
-      </nav>
+        </nav>
 
-      <div className="border-t border-[var(--border)] px-5 py-3">
-        <p className="text-[11px] leading-relaxed text-slate-400">
-          Prototyp med exempeldata. Inget sparas mellan sidladdningar.
-        </p>
-      </div>
-    </aside>
+        <div className="border-t border-[var(--border)] px-5 py-3">
+          <p className="text-[11px] leading-relaxed text-slate-400">
+            Prototyp med exempeldata. Inget sparas mellan sidladdningar.
+          </p>
+        </div>
+      </aside>
+    </>
   );
 }
